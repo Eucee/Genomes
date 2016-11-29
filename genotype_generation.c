@@ -66,37 +66,53 @@ void tirage_loci_ambigu(int* genotype, int tailleGenotype, int maxLociAmbigus)
 void tirage_haplotypes(int* genotype, int* haplotype1, int* haplotype2, int tailleGenotype)
 {
     int position;
+    int lociAmbHap;
 
     for (position = 0; position < tailleGenotype; position ++)
     {
-        int lociAmbHap=0;
-        lociAmbHap = rand_a_b(0, 2) ;
-		haplotype1[position] = lociAmbHap;
-		if (lociAmbHap == 0) haplotype2[position] = 1;
-		//else(lociAmbHap == 1)
-        haplotype2[position] = 0;
+        lociAmbHap=0;
+
+        haplotype1[position] = genotype[position];
+        haplotype2[position] = genotype[position];
+
+		if(genotype[position]==2){
+
+            lociAmbHap = rand_a_b(0, 2) ;
+            haplotype1[position] = lociAmbHap;
+            if (lociAmbHap == 0) { haplotype2[position] = 1;
+            }else//(lociAmbHap == 1)
+            { haplotype2[position] = 0;}
+		}
     }
 }
 
-void tirage_loci_sans_doublon(int* genotype1, int* genotype2, int tailleGenotype, int maxLociAmbigus){
+void nouveaux_tirages_si_doublon(int* genotype1, int* genotype2, int* haplotype1, int* haplotype2, int tailleGenotype, int maxLociAmbigus){
 
-int similaire = 0;
-int i;
+    int similaire = 0;
+    int i;
 
-            do{
+    //1ere verification de similarité entre genotype
+    for(i = 0; i < tailleGenotype; i++){
 
-                tirage_loci_aleatoire(genotype2, tailleGenotype);
-                tirage_loci_ambigu(genotype2, tailleGenotype, maxLociAmbigus);
+        if (genotype1[i] == genotype2[i]) similaire++;
+    }
 
-                //verification de similarité entre genotype
-                for(i = 0; i < tailleGenotype; i++){
+    if(similaire == tailleGenotype){
 
-                    if (genotype1[i] == genotype2[i]) similaire++;
-                }
+        do{//nouveau tirage s'il sont similaires
+            similaire = 0;
 
-            }while(similaire == tailleGenotype); //nouveau tirage s'il sont similaires
-                //on prévoit le cas d'un troisième (ou plus!) tirage similaire
+            tirage_loci_aleatoire(genotype2, tailleGenotype);
+            tirage_loci_ambigu(genotype2, tailleGenotype, maxLociAmbigus);
+            tirage_haplotypes(genotype2, haplotype1, haplotype2, tailleGenotype);
 
+            for(i = 0; i < tailleGenotype; i++){
+
+                if (genotype1[i] == genotype2[i]) similaire++;
+            }
+
+        }while(similaire == tailleGenotype); //on prévoit le cas d'un troisième (ou plus!) tirage similaire
+      }
     //affiche_tableau(genotype1, tailleGenotype);
     //affiche_tableau(genotype2, tailleGenotype);
 }
@@ -106,42 +122,59 @@ int i;
 void generation_genotype_aleatoire(int nbIndividus, int tailleGenotype, int maxLociAmbigus)
 {
 	//Initialisation des tableaux de génotype et d'haplotypes
-	int* genotype = NULL;
-	int* haplotype1 = NULL;
-	int* haplotype2 = NULL;
+	int** liste_geno = NULL;
+	int** liste_haplo1 = NULL;
+	int** liste_haplo2 = NULL;
 
 	//Allocations de mémoire
-	genotype = malloc(tailleGenotype * sizeof(int));
-	haplotype1 = malloc(tailleGenotype * sizeof(int));
-	haplotype2 = malloc(tailleGenotype * sizeof(int));
+	liste_geno = (int**)malloc((nbIndividus) * sizeof (int*));
+	liste_haplo1 = (int**)malloc((nbIndividus) * sizeof (int*));
+	liste_haplo2 = (int**)malloc((nbIndividus) * sizeof (int*));
 
 	//Initialisation compteur du nombre d'individus
 	int individu, individu2;
 
 	//Boucle de génération aléatoire de génotype et d'haplotypes pour chacun des individus
-	for (individu = 1; individu <= nbIndividus; individu ++)
+	for (individu = 0; individu < nbIndividus; individu ++)
 	{
-	    for(individu2 = 1; individu2 <= nbIndividus; individu2++){
-            //possibilite d optimiser pour eviter de comparer liste_geno[i] avec lui meme
-            tirage_loci_sans_doublon(individu, individu2, tailleGenotype, maxLociAmbigus);
-            //complexite de type taille_locus^3 (3eme boucle for dans la fct)
-            //possibilite d optimiser en evitant une comparaison 2 a 2 mais plutot de type "diviser pour regner" ?
-	    }
 
-        tirage_haplotypes(genotype, haplotype1, haplotype2, tailleGenotype);
+        liste_geno[individu] = (int*)malloc(tailleGenotype * sizeof(int));
+        liste_haplo1[individu] = (int*)malloc(tailleGenotype * sizeof(int));
+        liste_haplo2[individu] = (int*)malloc(tailleGenotype * sizeof(int));
+
+	    tirage_loci_aleatoire(liste_geno[individu], tailleGenotype);
+        tirage_loci_ambigu(liste_geno[individu], tailleGenotype, maxLociAmbigus);
+        tirage_haplotypes(liste_geno[individu], liste_haplo1[individu], liste_haplo2[individu], tailleGenotype);
+
 
 		//Affichages du génotype et des haplotypes générés pour chaque individu
-		printf("\n\nGenotype Individu %d : ", individu);
-		affiche_tableau(genotype, tailleGenotype);
-		printf("\nHaplotype 1  : ");
-		affiche_tableau(haplotype1, tailleGenotype);
+		printf("\n\n===Individu %d ===", individu+1);
+		printf("\nGenotype    : ");
+		affiche_tableau(liste_geno[individu], tailleGenotype);
+		printf("\nHaplotype 1 : ");
+		affiche_tableau(liste_haplo1[individu], tailleGenotype);
 		printf("\nHaplotype 2 : ");
-		affiche_tableau(haplotype2, tailleGenotype);
+		affiche_tableau(liste_haplo2[individu], tailleGenotype);
 	}
+/*
+	for (individu = 0; individu < nbIndividus; individu ++){
+        for(individu2 = 0; individu2 < nbIndividus; individu2++){
+        //possibilite d optimiser pour eviter de comparer liste_geno[i] avec lui meme
+        nouveaux_tirages_si_doublon(liste_geno[individu], liste_geno[individu2], liste_haplo1[individu2], liste_haplo1[individu2],tailleGenotype, maxLociAmbigus);
+        //complexite de type taille_locus^3 (3eme boucle for dans la fct)
+        //possibilite d optimiser en evitant une comparaison 2 a 2 mais plutot de type "diviser pour regner" ?
+	    }
+	}*/
 
-	free(genotype);
-	free(haplotype1);
-	free(haplotype2);
+	//libération de mémoire alloué dynamiquement
+	for (individu = 1; individu <= nbIndividus; individu ++){
+           free(liste_geno[individu]);
+           free(liste_haplo1[individu]);
+           free(liste_haplo2[individu]);
+	}
+	free(liste_geno);
+	free(liste_haplo1);
+	free(liste_haplo2);
 }
 
 
