@@ -10,70 +10,63 @@ int rand_a_b(int a, int b)
 	return rand()%(b-a) +a;
 }
 
-//Fonction génération de loci aléatoire avec positions ambigues
-void tirage_avec_ambiguite(int* genotype, int* haplotype1, int* haplotype2, int position, int* adr_nbLociAmbigus)
+
+
+
+//Fonction génération aléatoire des positions d'un génome
+void tirage_loci_aleatoire(int* genotype, int tailleGenotype)
 {
-	int lociAleatoire, lociAmbHap=0;
-
-	lociAleatoire = rand_a_b(0,3);
-
-	if (lociAleatoire == 1 || lociAleatoire == 0)
-	{
-		genotype[position] = lociAleatoire;
-		haplotype1[position] = lociAleatoire;
-		haplotype2[position] = lociAleatoire;
-		printf("\nAmb pour 0 ou 1: %d", *adr_nbLociAmbigus);
-	}
-	else if (lociAleatoire == 2)//Si un loci ambigu dans la séquence, sélection aléatoire du 0 ou du 1 pour les haplotypes générés
-	{
-		genotype[position] = lociAleatoire;
-		lociAmbHap = rand_a_b(0, 2) ;
-		haplotype1[position] = lociAmbHap;
-		if (lociAmbHap == 0)
-		{
-			haplotype2[position] = 1;
-		}else if (lociAmbHap == 1)
-		{
-			haplotype2[position] = 0;
-
-		}
-		*adr_nbLociAmbigus=*adr_nbLociAmbigus+1;
-		printf("\nAmb pour 2: %d", *adr_nbLociAmbigus);
-	}
-}
-
-//Fonction génération de loci aléatoire sans positions ambigues
-void tirage_sans_ambiguite(int* genotype, int* haplotype1, int* haplotype2, int position)
-{
+	int position;
 	int lociAleatoire=0;
-	lociAleatoire = rand_a_b(0, 2) ; //Tirage aléatoire dans l'intervalle [0, 2[
-	if (lociAleatoire == 1 || lociAleatoire == 0)
+
+	for (position = 0; position < tailleGenotype; position ++)
 	{
-		genotype[position] = lociAleatoire ;
-		haplotype1[position] = lociAleatoire;
-		haplotype2 [position] = lociAleatoire;
+
+	lociAleatoire = rand_a_b(0, 2) ; //Tirage aléatoire dans l'intervalle [0, 2[
+    genotype[position] = lociAleatoire ;
+
 	}
 }
 
 //Fonction génération aléatoire des positions d'un génome
-void tirage_loci_aleatoire(int* genotype, int* haplotype1, int* haplotype2, int tailleGenotype, int maxLociAmbigus)
+void tirage_loci_ambigu(int* genotype, int tailleGenotype, int maxLociAmbigus)
 {
-	int nbLociAmbigus = 0;
-	int position = 1;
+	int i;
+    int* pos_locus_ambigu = NULL;
+	int* deja_fait = NULL;
 
-	for (position = 0; position < tailleGenotype; position ++)
-	{
-		if (nbLociAmbigus < maxLociAmbigus)
+	//afficherVect(locus, taille_locus);
+	pos_locus_ambigu = malloc((maxLociAmbigus) * sizeof (int));
+	deja_fait = malloc((tailleGenotype) * sizeof (int));
+
+    for(i = 0; i < maxLociAmbigus; i++){
+        do{
+            pos_locus_ambigu[i] = rand_a_b(0, tailleGenotype) ;
+        }while(deja_fait[pos_locus_ambigu[i]] == 1);
+
+        deja_fait[pos_locus_ambigu[i]]  = 1;
+        genotype[pos_locus_ambigu[i]] = 2;
+        //afficherVect(locus, taille_locus);
+    }
+}
+
+void tirage_haplotypes(int* genotype, int* haplotype1, int* haplotype2, int tailleGenotype)
+{
+    int position;
+
+    for (position = 0; position < tailleGenotype; position ++)
+    {
+
+        int lociAmbHap=0;
+        lociAmbHap = rand_a_b(0, 2) ;
+		haplotype1[position] = lociAmbHap;
+		if (lociAmbHap == 0)
 		{
-		    printf("\nbof");
-			tirage_avec_ambiguite(genotype, haplotype1, haplotype2, position, &nbLociAmbigus);
+			haplotype2[position] = 1;
+		}else{
+			haplotype2[position] = 0;
 		}
-		else if (nbLociAmbigus >= maxLociAmbigus)
-		{
-		    printf("\nok");
-			tirage_sans_ambiguite(genotype, haplotype1, haplotype2, position);
-		}
-	}
+    }
 }
 
 //Fonction génération aléatoire d'un génotypes pour chacun des individus
@@ -95,8 +88,9 @@ void generation_genotype_aleatoire(int nbIndividus, int tailleGenotype, int maxL
 	//Boucle de génération aléatoire de génotype et d'haplotypes pour chacun des individus
 	for (individu = 1; individu <= nbIndividus; individu ++)
 	{
-		tirage_loci_aleatoire(genotype, haplotype1, haplotype2, tailleGenotype, maxLociAmbigus);
-		//tirage_loci_ambigu(genotype, haplotype1, haplotype2, tailleGenotype, maxLociAmbigus);
+		tirage_loci_aleatoire(genotype, tailleGenotype);
+		tirage_loci_ambigu(genotype, tailleGenotype, maxLociAmbigus);
+		tirage_haplotypes(genotype, haplotype1, haplotype2, tailleGenotype);
 
 		//Affichages du génotype et des haplotypes générés pour chaque individu
 		printf("\n\nGenotype Individu %d : ", individu);
